@@ -1,56 +1,45 @@
 # **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
-
-Overview
+Zoltán Puha - Udacity SDC ND Term 1 - Project 1.
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
-
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
+**Finding Lane Lines on the Road**
 
 
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
+## Output 
+![good looking lines](modifiedsolidWhiteRight.jpg)
 
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+### Reflection
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+### 1. My pipeline
 
-**Step 2:** Open the code in a Jupyter Notebook
+My pipeline consisted of steps that followed the logic presented in the videos.
+First, make a copy of the image, then create a grayscale img from the copy. Then apply masking on the image, to get the region of interest. I have set up the region of interest, as a triangle in the bottom of the picture. After this, I applied Gaussian bluring to remove not clear gradients. Then, I applied canny edge detection to get the edges from gradients and used these for the Hough transform to get the lines.
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+After this, I had good points, but they were not lines. 
+In making the lines, I tried to be as robust as possible. 
+First, I selected, which line (from the HT) can be associated with the left or the right lane (I took the ones left from the middle of the RoI, to the left, and vice versa). Then, I averaged these points and fitted a linear regression for the left and for the right lane as well. I saw, that the slope from the regression was not perfect, so I modified it.
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+I made a rolling window for three variables for both lanes.
 
-`> jupyter notebook`
+#### 1. The point of where the red lines start. 
+These can be calculated from the regression, as we know the intercept, the size of the image and the slope. $ p = (size - intercept)/slope $
+This value first get initiated, then if it needs change, it happens smoothly (the value of this value in t time depends of the value in t-1 time)
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+#### 2. The slope of the lane. 
+This also gets updated, but here I also use the slopes of the lines of the HT. This value also slowly changes over time, to overcome the problem of jumping lines.
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+#### 3. The intercept of the lane. 
+Also adjusted over time. 
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+### 2. Identify potential shortcomings with your current pipeline
+- I can see that for some lanes, my solution doesn't show the whole line.
+- Also, these adjusting approach has a lot of free parameters, so tuning it is hard. 
+- Also, the model is not suitable for really quick changes in lanes, but these could be fine tuned.
 
+### 3. Possible improvements
+
+Remove the global variables from the code.
+It could be nice, to put the whole problem as a learning problem, but without labels it would be hard. 
